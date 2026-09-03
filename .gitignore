@@ -1,0 +1,12 @@
+build/
+out/
+cmake-build-*/
+
+*.obj
+*.o
+*.exe
+*.ilk
+*.pdb
+*.out
+
+.vscode/*

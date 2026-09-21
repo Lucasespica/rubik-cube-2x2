@@ -14,4 +14,5 @@ include_directories(include)
 # Lista dos .cpp que formam o executavel final
 add_executable(cubo
     src/main.cpp
+    src/Cubo.cpp
 )

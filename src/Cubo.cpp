@@ -1,5 +1,8 @@
 #include "Cubo.hpp"
 
+#include <optional>
+#include <random>
+
 // Tudo dentro de "namespace" sem nome fica visível
 // somente neste arquivo .cpp. Que serve para esconder
 // detalhes internos do resto do programa.
@@ -81,6 +84,23 @@ namespace {
             }
         }
     }
+    
+    // Lista de todos os movimentos, pra podermos percorrer com um for.
+    const std::array<Movimento, 12> TODOS_MOVIMENTOS = {{
+        Movimento::U, Movimento::U_LINHA,
+        Movimento::D, Movimento::D_LINHA,
+        Movimento::L, Movimento::L_LINHA,
+        Movimento::R, Movimento::R_LINHA,
+        Movimento::F, Movimento::F_LINHA,
+        Movimento::B, Movimento::B_LINHA
+    }};
+
+    // Devolve o movimento inverso. Depende da ordem do enum Movimento
+    // static_cast converte o enum em int de volta
+    Movimento inverso(Movimento m) {
+        int i = static_cast<int>(m);
+        return static_cast<Movimento>(i % 2 == 0 ? i + 1 : i - 1);
+    }
 }
 
 // Cubo resolvido
@@ -130,4 +150,59 @@ Cubo Cubo:: aplicarMovimento(Movimento m) const{
         case Movimento::B_LINHA: aplicarCiclos(stickers_, novo.stickers_, MOVIMENTO_B, false); break;
     }
     return novo;
+}
+
+std::vector<std::pair<Movimento, Cubo>> Cubo::gerarSucessores(
+    std::optional<Movimento> ultimoMovimento) const {
+        std::vector<std::pair<Movimento, Cubo>> sucessores;
+        sucessores.reserve(TODOS_MOVIMENTOS.size());    // Evita realocar no meio
+
+        for (Movimento m : TODOS_MOVIMENTOS) {
+            // Poda se existe um movimento anterior e 'm' o desfaria
+            // has_value() diz se o optional tem algo dentro
+            // *ultimoMovimento pega esse valor
+            if (ultimoMovimento.has_value() && m == inverso(*ultimoMovimento)) {
+                continue;
+            }
+
+            // emplace_back constroi o par (movimento, novo cubo) direto
+            // no vetor, sem copia extra
+            sucessores.emplace_back(m, aplicarMovimento(m));
+        }
+        return sucessores;
+}
+
+// Resolvido = cada face com 4 stickers da mesma cor
+// E não importa a face
+bool Cubo::estaResolvido() const {
+    for (int face = 0; face < NUM_FACES; ++face) {
+        Cor primeira = stickers_[face * STICKERS_POR_FACE];
+        for (int s = 1; s < STICKERS_POR_FACE; ++s) {
+            if (stickers_[face * STICKERS_POR_FACE + s] != primeira) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+Cubo Cubo::embaralhado(unsigned seed, int numMovimentos) {
+    // mt19937 e deterministico, a mesma seed sempre gera a
+    // mesma sequencia de numeros, em qualquer computador
+    std::mt19937 gerador(seed);
+
+    Cubo cubo;                          // comeca resolvido
+    std::optional<Movimento> ultimo;    // vazio no inicio
+
+    for(int i = 0; i < numMovimentos; i++) {
+        Movimento m;
+        // Sorteia ate achar um movimento que nao desfaca o anterior
+        do {
+            m = TODOS_MOVIMENTOS[gerador() % TODOS_MOVIMENTOS.size()];
+        } while (ultimo.has_value() && m == inverso(*ultimo));
+
+        cubo = cubo.aplicarMovimento(m);
+        ultimo = m;
+    }
+    return cubo;
 }

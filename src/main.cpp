@@ -1,4 +1,5 @@
 #include <iostream>
+#include <optional>
 #include "Cubo.hpp"
 
 int main() {
@@ -65,6 +66,41 @@ int main() {
         std::cout << "R U R' U' x" << k << " == original? " << (s == original)
                   << "  (esperado " << (k == 6) << ")\n";
     }
+
+    // estaResolvido teste
+    std::cout << "resolvido? original=" << original.estaResolvido() << " (1)"
+              << "  apos U=" << u.estaResolvido() << " (0)\n";
+
+    // U e D' juntos giram o CUBO INTEIRO: continua resolvido, mas
+    // nao e igual ao cubo original.
+    Cubo girado = original.aplicarMovimento(Movimento::U)
+                          .aplicarMovimento(Movimento::D_LINHA);
+    std::cout << "U D' resolvido? " << girado.estaResolvido() << " (1)"
+              << "  igual ao original? " << (girado == original) << " (0)\n";
+    
+    // gerarSucessores teste
+    auto suc1 = original.gerarSucessores(std::nullopt);   // sem movimento anterior
+    auto suc2 = original.gerarSucessores(Movimento::U);   // anterior foi U
+    std::cout << "sucessores sem anterior: " << suc1.size() << " (12)"
+              << "  apos U: " << suc2.size() << " (11)\n";
+    
+    bool achouInverso = false;
+    for (const auto& par : suc2) {
+        if (par.first == Movimento::U_LINHA) achouInverso = true;
+    }
+    std::cout << "U_LINHA aparece apos U? " << achouInverso << " (0)\n";
+
+    // embaralhado (3 seeds) teste
+    const unsigned seeds[] = {42, 123, 2026};
+    for (unsigned seed : seeds) {
+        Cubo e1 = Cubo::embaralhado(seed, 6);
+        Cubo e2 = Cubo::embaralhado(seed, 6);
+        std::cout << "seed " << seed
+                  << ": repetivel=" << (e1 == e2) << " (1)"
+                  << " resolvido=" << e1.estaResolvido() << " (0)\n";
+    }
+    std::cout << "seeds 42 e 123 diferentes? "
+              << !(Cubo::embaralhado(42, 6) == Cubo::embaralhado(123, 6)) << " (1)\n";
 
     return 0;
 }

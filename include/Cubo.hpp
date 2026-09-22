@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <optional>
 
 // Movimento.hpp faz mais sentido como arquivo separado,
 // depois, irei mover pra include/Movimento.hpp
@@ -68,7 +69,7 @@ public:
     // 'ultimoMovimento' é opcional — usado pra podar o movimento
     // inverso (evita desfazer o passo anterior).
     std::vector<std::pair<Movimento, Cubo>> gerarSucessores(
-        Movimento ultimoMovimento) const;
+        std::optional<Movimento> ultimoMovimento) const;
 
     // Função avaliadora
     bool estaResolvido() const;

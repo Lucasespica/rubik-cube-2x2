@@ -15,4 +15,5 @@ include_directories(include)
 add_executable(cubo
     src/main.cpp
     src/Cubo.cpp
+    src/Busca.cpp
 )

@@ -16,4 +16,5 @@ add_executable(cubo
     src/main.cpp
     src/Cubo.cpp
     src/Busca.cpp
+    src/Interface.cpp
 )

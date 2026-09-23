@@ -3,8 +3,10 @@
 #include <chrono>
 #include "Cubo.hpp"
 #include "Busca.hpp"
+#include "Interface.hpp"
 
 int main() {
+    habilitarCoresWindows();
     Cubo original;  // chama o construtor (cubo resolvido)
 
     // Teste 1: girar U quatro vezes deve voltar ao inicio
@@ -23,6 +25,13 @@ int main() {
     // Teste 3: um U so NAO pode ser igual ao original
     Cubo u = original.aplicarMovimento(Movimento::U);
     std::cout << "U x1 == original?  " << (u == original) << "  (esperado 0)\n";
+
+    // Visualizacao do cubo
+    imprimirLegenda();
+    std::cout << "\nCubo resolvido:\n";
+    imprimirCubo(original);
+    std::cout << "\nCubo apos 1x U:\n";
+    imprimirCubo(u);
 
     // Teste 4: confere a direcao do giro. Depois de U, a fileira de
     // cima da face L recebe a cor da F (verde = 2), e a da F recebe

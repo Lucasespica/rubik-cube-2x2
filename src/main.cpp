@@ -1,5 +1,6 @@
 #include <iostream>
 #include <optional>
+#include <chrono>
 #include "Cubo.hpp"
 #include "Busca.hpp"
 
@@ -120,5 +121,24 @@ int main() {
     EstadoBusca primeiro = fp.remover();
     std::cout << "FilaPrioridade tirou caminho.size()=" << primeiro.caminho.size()
               << "  (esperado 1)\n";
+
+    // Teste de Busca: gera um cubo facil de resolver (poucos giros)
+    Cubo embaralhadoFacil = Cubo::embaralhado(7, 4);
+
+    auto imprimeResultado = [](const char* nome, const ResultadoBusca& r) {
+        std::cout << "\n== " << nome << " ==\n";
+        std::cout << "achou solucao? " << r.encontrou << "\n";
+        std::cout << "estados visitados: " << r.visitados << "\n";
+        std::cout << "movimentos (" << r.caminho.size() << "): ";
+        for (Movimento m : r.caminho) {
+            std::cout << nomeMovimento(m) << " ";
+        }
+        std::cout << "\n";
+    };
+
+    imprimeResultado("BFS", buscarBFS(embaralhadoFacil));
+    imprimeResultado("A*",  buscarAEstrela(embaralhadoFacil));
+    imprimeResultado("IDDFS", buscarIDDFS(embaralhadoFacil, 6));
+            
     return 0;
 }

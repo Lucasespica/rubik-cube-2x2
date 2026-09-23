@@ -93,3 +93,95 @@ EstadoBusca FilaPrioridade::remover() {
 bool FilaPrioridade::vazia() const {
     return dados_.empty();
 }
+
+std::string nomeMovimento(Movimento m) {
+    switch(m) {
+        case Movimento::U: return "U";
+        case Movimento::U_LINHA: return "U'";
+        case Movimento::D: return "D";
+        case Movimento::D_LINHA: return "D'";
+        case Movimento::L: return "L";
+        case Movimento::L_LINHA: return "L'";
+        case Movimento::R: return "R'";
+        case Movimento::R_LINHA: return "R'";
+        case Movimento::F: return "F";
+        case Movimento::F_LINHA: return "F'";
+        case Movimento::B: return "B";
+        case Movimento::B_LINHA: return "B'";
+    }
+    return "?";     // nunca deve chegar aqui
+}
+
+ResultadoBusca buscar(const Cubo& inicial,
+                      IEstruturaDeDados& estrutura,
+                      int limiteProfundidade) {
+    ResultadoBusca resultado;
+
+    // Adiciona estado inicial na estrutura
+    estrutura.inserir(EstadoBusca{inicial, {}});
+
+    // Enquanto a estrutura nao estiver vazia
+    while (!estrutura.vazia()) {
+        // Remove o proximo estado
+        EstadoBusca atual = estrutura.remover();
+        ++resultado.visitados;
+
+        // Avalia se o estado e final e encerra
+        if (atual.cubo.estaResolvido()) {
+            resultado.encontrou = true;
+            resultado.caminho = atual.caminho;
+            return resultado;
+        }
+
+        // Poda por profundidade (so importa para o IDDFS)
+        if (limiteProfundidade >= 0 &&
+            static_cast<int>(atual.caminho.size()) >= limiteProfundidade) {
+            continue;   // nao expande, mas o laco continua com outros estados
+        }
+
+        // Adiciona sucessores na estrutura
+        std::optional<Movimento> ultimo;
+        if (!atual.caminho.empty()) {
+            ultimo = atual.caminho.back();
+        }
+        for (const auto& par : atual.cubo.gerarSucessores(ultimo)) {
+            EstadoBusca filho;
+            filho.cubo = par.second;
+            filho.caminho = atual.caminho;       // copia o caminho do pai
+            filho.caminho.push_back(par.first);  // acrescenta o novo passo
+            estrutura.inserir(filho);
+        }
+    }
+    // Retorna 'sem solucao' (resultado.encontrou continua false)
+    return resultado;
+}
+
+ResultadoBusca buscarBFS(const Cubo& inicial) {
+    Fila fila;
+    return buscar(inicial, fila, -1);
+}
+
+ResultadoBusca buscarAEstrela(const Cubo& inicial) {
+    FilaPrioridade filaPrioridade;
+    return buscar(inicial, filaPrioridade, -1);
+}
+
+ResultadoBusca buscarIDDFS(const Cubo& inicial, int limiteMaximo) {
+    // laco externo do IDDFS: aumenta o limite aos poucos, reaproveitando
+    // sempre o mesmo 'buscar'.
+    long long totalVisitados = 0;
+    for (int limite = 0; limite <= limiteMaximo; ++limite) {
+        Pilha pilha;
+        ResultadoBusca resultado = buscar(inicial, pilha, limite);
+        totalVisitados += resultado.visitados;
+
+        if (resultado.encontrou) {
+            resultado.visitados = totalVisitados;   // soma de todas as tentativas
+            return resultado;
+        }
+    }
+
+    ResultadoBusca semSolucao;
+    semSolucao.visitados = totalVisitados;
+    return semSolucao;   // encontrou == false
+}

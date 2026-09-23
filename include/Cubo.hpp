@@ -5,10 +5,6 @@
 #include <vector>
 #include <optional>
 
-// Movimento.hpp faz mais sentido como arquivo separado,
-// depois, irei mover pra include/Movimento.hpp
-// Por enquanto vou deixar
-
 enum class Movimento {
     U, U_LINHA,
     D, D_LINHA,

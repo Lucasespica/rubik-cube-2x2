@@ -1,8 +1,10 @@
 #include "Interface.hpp"
 #include <iostream>
 #include <string>
+#include <limits>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <windows.h>
 #endif
 
@@ -96,4 +98,175 @@ void imprimirLegenda() {
         std::cout << corParaAnsi(c) << '[' << corParaLetra(c) << ']' << RESET << ' ';
     }
     std::cout << '\n';
+}
+
+std::optional<Movimento> movimentoDoTexto(const std::string& texto) {
+    if (texto.empty()) {
+        return std::nullopt;
+    }
+
+    // toupper aceita minuscula tambem (ex: "u" vira "U")
+    char letra = std::toupper(static_cast<unsigned char>(texto[0]));
+    // se o texto tiver um segundo caractere e for aspa, e o movimento invertido
+    bool linha = (texto.size() > 1 && texto[1] == '\'');
+
+    switch (letra) {
+        case 'U': return linha ? Movimento::U_LINHA : Movimento::U;
+        case 'D': return linha ? Movimento::D_LINHA : Movimento::D;
+        case 'L': return linha ? Movimento::L_LINHA : Movimento::L;
+        case 'R': return linha ? Movimento::R_LINHA : Movimento::R;
+        case 'F': return linha ? Movimento::F_LINHA : Movimento::F;
+        case 'B': return linha ? Movimento::B_LINHA : Movimento::B;
+        default:  return std::nullopt;
+    }
+}
+
+void imprimirResultado(const std::string& nome, const ResultadoBusca& resultado) {
+    std::cout << "\n== " << nome << " ==\n";
+    std::cout << "Estados visitados: " << resultado.visitados << "\n";
+
+    if (!resultado.encontrou) {
+        std::cout << "Sem solucao.\n";
+        return;
+    }
+
+    std::cout << "Movimentos (" << resultado.caminho.size() << "): ";
+    for (Movimento m : resultado.caminho) {
+        std::cout << nomeMovimento(m) << ' ';
+    }
+    std::cout << '\n';
+}
+
+int lerInteiro(const std::string& pergunta) {
+    while (true) {
+        std::cout << pergunta;
+        int valor;
+        if (std::cin >> valor) {
+            return valor;
+        }
+        // cin.fail() aconteceu, a pessoa digitou algo que nao e numero.
+        // clear() tira o cin do estado de erro; ignore() descarta o que
+        // ela digitou. Sem isso, o mesmo texto invalido ficaria preso
+        // no buffer e o programa reclamaria pra sempre, sem parar pra
+        // esperar uma nova entrada.
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Entrada invalida. Digite um numero.\n";
+    }
+}
+
+unsigned lerSeed(const std::string& pergunta) {
+    while (true) {
+        std::cout << pergunta;
+        unsigned valor;
+        if (std::cin >> valor) {
+            return valor;
+        }
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Entrada invalida. Digite um numero.\n";
+    }
+}
+
+void jogar() {
+    std::cout << "\n=== MODO JOGAR ===\n";
+    unsigned seed = lerSeed("Seed do embaralhamento: ");
+    int numMovimentos = lerInteiro("Quantos movimentos embaralhar: ");
+
+    Cubo cubo = Cubo::embaralhado(seed, numMovimentos);
+    int jogadas = 0;
+
+    std::cout << "\nComandos: U D L R F B (com ' pro sentido inverso, ex: U')\n";
+    std::cout << "Digite 'sair' pra voltar ao menu.\n";
+
+    while (true) {
+        std::cout << '\n';
+        imprimirCubo(cubo);
+
+        if (cubo.estaResolvido()) {
+            std::cout << "\nParabens! Voce resolveu o cubo em " << jogadas << " jogadas.\n";
+            return;
+        }
+
+        std::cout << "\nMovimento: ";
+        std::string entrada;
+        std::cin >> entrada;
+
+        if (entrada == "sair") {
+            std::cout << "Voltando ao menu.\n";
+            return;
+        }
+
+        std::optional<Movimento> movimento = movimentoDoTexto(entrada);
+        if (!movimento.has_value()) {
+            std::cout << "Movimento nao reconhecido. Tente de novo.\n";
+            continue;
+        }
+
+        cubo = cubo.aplicarMovimento(*movimento);
+        ++jogadas;
+    }
+}
+
+void iaJoga() {
+    unsigned seed = lerSeed("Seed do embaralhamento: ");
+    int numMovimentos = lerInteiro("Quantos movimentos embaralhar: ");
+
+    Cubo embaralhado = Cubo::embaralhado(seed, numMovimentos);
+    std::cout << "\nCubo embaralhado:\n";
+    imprimirCubo(embaralhado);
+
+    std::cout << "\nQual algoritmo?\n";
+    std::cout << "1 - Busca em Largura (BFS)\n";
+    std::cout << "2 - Busca em Profundidade Limitada Iterativa (IDDFS)\n";
+    std::cout << "3 - A*\n";
+    std::cout << "4 - Todos (compara)\n";
+    int escolha = lerInteiro("Escolha: ");
+
+    // O reverso exato do embaralhamento sempre resolve o cubo, entao
+    // 'numMovimentos' e um limite de profundidade seguro pro IDDFS.
+    ResultadoBusca resultado;
+    if (escolha == 1) {
+        resultado = buscarBFS(embaralhado);
+        imprimirResultado("BFS", resultado);
+    } else if (escolha == 2) {
+        resultado = buscarIDDFS(embaralhado, numMovimentos);
+        imprimirResultado("IDDFS", resultado);
+    } else if (escolha == 3) {
+        resultado = buscarAEstrela(embaralhado);
+        imprimirResultado("A*", resultado);
+    } else if (escolha == 4) {
+        imprimirResultado("BFS", buscarBFS(embaralhado));
+        imprimirResultado("IDDFS", buscarIDDFS(embaralhado, numMovimentos));
+        resultado = buscarAEstrela(embaralhado);
+        imprimirResultado("A*", resultado);
+    } else {
+        std::cout << "Opcao invalida.\n";
+        return;
+    }
+
+    if (!resultado.encontrou) {
+        return;
+    }
+
+    std::cout << "\nVer a solucao passo a passo? (s/n): ";
+    std::string resposta;
+    std::cin >> resposta;
+    if (resposta != "s" && resposta != "S") {
+        return;
+    }
+
+    Cubo passo = embaralhado;
+    std::cout << '\n';
+    imprimirCubo(passo);
+    for (Movimento m : resultado.caminho) {
+        std::cout << "\n[Enter] proximo movimento: " << nomeMovimento(m) << '\n';
+        // limpa o resto da linha anterior no buffer, depois espera o Enter de verdade
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin.get();
+
+        passo = passo.aplicarMovimento(m);
+        imprimirCubo(passo);
+    }
+    std::cout << "\nResolvido!";
 }

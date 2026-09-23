@@ -1,6 +1,7 @@
 #include <iostream>
 #include <optional>
 #include "Cubo.hpp"
+#include "Busca.hpp"
 
 int main() {
     Cubo original;  // chama o construtor (cubo resolvido)
@@ -102,5 +103,22 @@ int main() {
     std::cout << "seeds 42 e 123 diferentes? "
               << !(Cubo::embaralhado(42, 6) == Cubo::embaralhado(123, 6)) << " (1)\n";
 
+
+    // teste heuristica de cantos
+    std::cout << "heuristica(original) = " << heuristicaCantos(original)
+              << "  (esperado 0)\n";
+    Cubo embaralhado5 = Cubo::embaralhado(42, 5);
+    std::cout << "heuristica(embaralhado) = " << heuristicaCantos(embaralhado5)
+              << "  (esperado > 0)\n";
+
+    // teste FilaPrioridade: confirma que sai sempre o menor f = g + h
+    FilaPrioridade fp;
+    fp.inserir(EstadoBusca{original, {Movimento::U, Movimento::D, Movimento::L}}); // g=3
+    fp.inserir(EstadoBusca{embaralhado5, {}});                                     // g=0, h alto
+    fp.inserir(EstadoBusca{original, {Movimento::U}});                             // g=1, h=0 -> f=1 (menor)
+
+    EstadoBusca primeiro = fp.remover();
+    std::cout << "FilaPrioridade tirou caminho.size()=" << primeiro.caminho.size()
+              << "  (esperado 1)\n";
     return 0;
 }

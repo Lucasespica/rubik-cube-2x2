@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <deque>
+#include <queue>
 #include "Cubo.hpp"
 
 // Um "no" da arvore de busca: um cubo, mais o caminho de
@@ -44,4 +45,27 @@ public:
     bool vazia() const override;
 private:
     std::vector<EstadoBusca> dados_;
+};
+
+// Quantos cantos fora do lugar (funcao usada por A*)
+// Fica declarada aqui pro comparador do priority_queue poder usa-la
+int heuristicaCantos(const Cubo& cubo);
+
+// Decide qual EstadoBusca sai primeiro da fila de prioridade
+struct ComparaEstados {
+    bool operator()(const EstadoBusca& a, const EstadoBusca& b) const;
+};
+
+// A* sempre remove o estado de menor f = g + h
+// onde g = movimentos ja dados e h = heuristicaCantos
+class FilaPrioridade : public IEstruturaDeDados {
+public:
+    void inserir(const EstadoBusca& estado) override;
+    EstadoBusca remover() override;
+    bool vazia() const override;
+private:
+    // std::priority_queue tira por padrao o maior primeiro
+    // E como queremos o menor f primeiro, o operator() (acima) devolve o inverso
+    // da comparacao usual (fa > fb, nao fa < fb) 
+    std::priority_queue<EstadoBusca, std::vector<EstadoBusca>, ComparaEstados> dados_;
 };

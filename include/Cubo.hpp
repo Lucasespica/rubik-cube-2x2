@@ -3,10 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
-
-// Movimento.hpp faz mais sentido como arquivo separado,
-// depois, irei mover pra include/Movimento.hpp
-// Por enquanto vou deixar
+#include <optional>
 
 enum class Movimento {
     U, U_LINHA,
@@ -22,6 +19,32 @@ enum class Movimento {
 enum class Cor : uint8_t {
     BRANCO, AMARELO, VERDE, AZUL, LARANJA, VERMELHO
 };
+
+// CONVENCAO DE INDICES
+//
+// Planificacao em cruz (cada face vista de fora do cubo, na
+// orientacao em que aparece na planificacao):
+//
+//             +---+
+//             | U |   0
+//         +---+---+---+---+
+//         | L | F | R | B |   1 2 3 4
+//         +---+---+---+---+
+//             | D |   5
+//             +---+
+//
+// Faces:  0=U (cima)   1=L (esquerda)  2=F (frente)
+//         3=R (direita) 4=B (tras)     5=D (baixo)
+//
+// Stickers dentro de cada face:
+//         +---+---+
+//         | 0 | 1 |
+//         +---+---+
+//         | 2 | 3 |
+//         +---+---+
+//
+// Indice no array stickers_:  face * STICKERS_POR_FACE + sticker
+// Ex: topo-direita da face F  ->  2 * 4 + 1 = 9
 
 class Cubo {
 public:
@@ -42,7 +65,7 @@ public:
     // 'ultimoMovimento' é opcional — usado pra podar o movimento
     // inverso (evita desfazer o passo anterior).
     std::vector<std::pair<Movimento, Cubo>> gerarSucessores(
-        Movimento ultimoMovimento) const;
+        std::optional<Movimento> ultimoMovimento) const;
 
     // Função avaliadora
     bool estaResolvido() const;
